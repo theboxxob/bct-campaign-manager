@@ -21,8 +21,11 @@ Make sure you have required packages installed:
 OPTIONALLY Start a new virtual environment:
 
 (`python3 -m venv .venv`)
+
 (`source .venv/bin/activate`)
+
 Install prerequisites:
+
 ```pip install bs4 scrapy```
 
 The main entry point to the program is the `main.py` file.
