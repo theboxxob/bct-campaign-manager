@@ -54,6 +54,8 @@ Start a new round:
 
 ```python3 main.py round add CAMPAIGN_NAME ROUND_NUMBER```
 
+Flag `--round_start` is supported. It can be supplied as milliseconds from epoch. Otherwise, current time is used.
+
 where ROUND_NUMBER can be any integer, for example start at 1 and then next add round 2 etc.
 
 This will fetch current post count etc. for each user currently added into the campaign.
