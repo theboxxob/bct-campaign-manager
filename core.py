@@ -371,7 +371,7 @@ def round_to_csv(args):
                 csv_writer = csv.writer(f, delimiter=';')
                 csv_writer.writerow(
                     ['round_number', 'ended', 'round_start',
-                        'round_start_utc', 'round_end', 'round_end_utc'])
+                        'round_end', 'round_start_utc', 'round_end_utc'])
                 csv_writer.writerow([
                     round_data.get('round_number'),
                     round_data.get('ended'),
