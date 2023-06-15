@@ -10,6 +10,10 @@ When managing campaigns, a lot of time is spent keeping track of user's post, ac
 
 In its present form, the utility will save campaign and round information into their corresponding folders in JSON format. Round data can be exported into CSV.
 
+## Donations
+
+Donations are always welcome: `bc1p6yuzqkl5csrjgwqtzlws38css8ruasjdz6pt37drg40778e9rp0qjyku8h`
+
 ## Usage
 
 Make sure you have required packages installed:
@@ -28,6 +32,10 @@ Simple help commands are available via
 ```python3 main.py --help```
 or
 ```python3 main.py SUBCOMMAND --help```
+
+Run tests via (not many test cases yet but more should be added later...):
+
+```python3 -m unittest -v```
 
 The supported subcommands are `main.py campaign` and `main.py round`
 
