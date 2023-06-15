@@ -2,7 +2,7 @@
 
 ## General information
 
-** NOTE, THE UTILITY IS STILL VERY MUCH A WORK IN PROGRESS AND USERS SHOULD NOT RELY ON IT TO BE BUG-FREE **
+**NOTE, THE UTILITY IS STILL VERY MUCH A WORK IN PROGRESS AND USERS SHOULD NOT RELY ON IT TO BE BUG-FREE**
 
 The Bitcointalk Campaign Manager is a Python utility developed to aid campaign managers on Bitcointalk to do their jobs more efficiently.
 
