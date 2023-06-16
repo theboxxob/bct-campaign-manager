@@ -7,7 +7,7 @@ if __name__ == '__main__':
     arg_parser = argparse.ArgumentParser()
     arg_parser.add_argument('uid', type=int, help='the bitcointalk profile uid')
     arg_parser.add_argument('start_timestamp', type=int, help=
-        'the start timestamp of round (milliseconds from epoch)')
+        'the start timestamp of round (seconds from epoch)')
     ns = arg_parser.parse_args()
 
     os.environ['SCRAPY_SETTINGS_MODULE'] =  'settings'
