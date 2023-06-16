@@ -75,7 +75,9 @@ This will fetch current post count etc. for each user currently added into the c
 
 Flag `--round_start` is supported. It can be supplied as seconds from epoch. Otherwise, current time is used:
 
-```python3 main.py round add CAMPAIGN_NAME ROUND_NUMBER --round_start SECONDS SINCE EPOCH```
+```python3 main.py round add CAMPAIGN_NAME ROUND_NUMBER --round_start SECONDS_SINCE_EPOCH```
+
+If this flag is used, the starting post count, activity and merit will be unknown.
 
 <picture>
  <img alt="Round start with flag JSON preview" src="blobs/round_start_flag_used.png">
