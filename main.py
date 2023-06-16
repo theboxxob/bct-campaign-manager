@@ -44,7 +44,7 @@ if __name__ == '__main__':
     add_round_subparser = round_subparser.add_parser('add', parents=[round_common_args])
     add_round_subparser.set_defaults(func=add_round)
     add_round_subparser.add_argument('--round_start', type=int, help=
-        'timestamp of when round started (milliseconds since epoch). '
+        'timestamp of when round started (seconds since epoch). '
         'Current time used if not provided.')
 
     end_round_subparser = round_subparser.add_parser('end', parents=[round_common_args])
