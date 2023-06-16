@@ -7,7 +7,7 @@ import csv
 from pathlib import Path
 from datetime import datetime
 
-from utils import validate_data_folder, fetch_bitcointalk_profile, CrawlerResultError
+from utils import validate_data_folder, fetch_bitcointalk_profile, fetch_user_posts, CrawlerResultError
 
 logger = logging.getLogger(__name__)
 
@@ -189,7 +189,7 @@ def set_current_round(data_folder, campaign_name, current_round):
     write_metadata(data_folder, campaign_name, json.dumps(metadata))
 
 
-def initialize_round_participants(data_folder, campaign_name):
+def initialize_round_participants(data_folder, campaign_name, start_current_time):
     """Get participants from campaign metadata and add them to the round
     as participants"""
     if campaign_has_participants(data_folder, campaign_name):
@@ -197,40 +197,47 @@ def initialize_round_participants(data_folder, campaign_name):
         profiles = map(fetch_bitcointalk_profile, ids)
         results = {}
         for item in profiles:
-            results[item.get('uid')] = {
+            new_element = {
                 'uid': item.get('uid'),
                 'name': item.get('name'),
                 'rank': item.get('rank'),
-                'start_post_count': item.get('post_count'),
-                'start_activity': item.get('activity'),
-                'start_merit': item.get('merit'),
+                'start_post_count': item.get('post_count') if start_current_time else 'unknown',
+                'start_activity': item.get('activity') if start_current_time else 'unknown',
+                'start_merit': item.get('merit') if start_current_time else 'unknown',
             }
+            results[item.get('uid')] = new_element
         return results
     return {}
 
 
-def finalize_round_participants(participants):
+def finalize_round_participants(round_start, participants, start_current_time):
     """Go through each participant in the round and update info and
     calculate difference from start"""
     profiles = map(fetch_bitcointalk_profile, participants.keys())
     for profile in profiles:
         uid = str(profile.get('uid'))
+        posts = fetch_user_posts(uid, round_start)
         print(f"Calculating posts for {profile.get('name')}...")
         participants[uid]['end_post_count'] = profile.get('post_count')
         participants[uid]['end_activity'] = profile.get('activity')
         participants[uid]['end_merit'] = profile.get('merit')
-        participants[uid]['posts_made'] = (
+
+        participants[uid]['post_count_difference'] = (
             int(participants[uid]['end_post_count']) -
                 int(participants[uid]['start_post_count'])
-        )
+        ) if start_current_time else 'unknown'
+
         participants[uid]['activity_gained'] = (
             int(participants[uid]['end_activity']) -
                 int(participants[uid]['start_activity'])
-        )
+        ) if start_current_time else 'unknown'
+
         participants[uid]['merit_gained'] = (
             int(participants[uid]['end_merit']) -
                 int(participants[uid]['start_merit'])
-        )
+        ) if start_current_time else 'unknown'
+
+        participants[uid]['posts_made'] = len(posts)
         print("Done")
     return participants
 
@@ -262,11 +269,13 @@ def add_round(args):
         return
     campaign = campaign_folder_path(path, campaign_name)
     round_number = args.round_number
+    start_current_time = False
     if not round_exists(campaign, round_number):
         print(f"Adding round number {round_number}")
         round_folder = campaign / str(round_number)
         os.makedirs(round_folder)
         if not (round_start := args.round_start):
+            start_current_time = True
             round_start = int(time.time())
         if campaign_has_participants(path, campaign_name):
             new_round = {
@@ -276,7 +285,8 @@ def add_round(args):
                 'round_start': round_start,
                 'round_start_utc': datetime.utcfromtimestamp(round_start).strftime(
                 "%Y-%m-%dT%H:%M:%SZ"),
-                'participants': initialize_round_participants(path, campaign_name)
+                'participants': initialize_round_participants(
+                    path, campaign_name, start_current_time)
             }
             write_round_data(campaign, round_number, json.dumps(new_round))
             print("Round added and written to the campaign folder")
@@ -298,6 +308,8 @@ def end_round(args):
     if round_exists(campaign_path, round_number):
         now = time.time()
         round_dict = read_round_data(campaign_path, round_number)
+        round_start = round_dict.get('round_start')
+        start_current_time = round_dict.get('start_current_time')
         if round_has_ended(campaign_path, round_number):
             print("Round has already ended")
             return
@@ -306,7 +318,8 @@ def end_round(args):
         round_dict['round_end'] = int(now)
         round_dict['round_end_utc'] = datetime.utcfromtimestamp(now).strftime("%Y-%m-%dT%H:%M:%SZ")
         if round_has_participants(campaign_path, round_number):
-            round_dict['participants'] = finalize_round_participants(round_dict.get('participants'))
+            round_dict['participants'] = finalize_round_participants(
+                round_start, round_dict.get('participants'), start_current_time)
         else:
             print("No participants to count posts for")
         write_round_data(campaign_path, round_number, json.dumps(round_dict))

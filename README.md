@@ -65,14 +65,20 @@ Start a new round:
 
 ```python3 main.py round add CAMPAIGN_NAME ROUND_NUMBER```
 
-Flag `--round_start` is supported. It can be supplied as seconds from epoch. Otherwise, current time is used.
-
 where ROUND_NUMBER can be any integer, for example start at 1 and then next add round 2 etc.
 
 This will fetch current post count etc. for each user currently added into the campaign.
 
 <picture>
  <img alt="Round start JSON preview" src="blobs/round_start.png">
+</picture>
+
+Flag `--round_start` is supported. It can be supplied as seconds from epoch. Otherwise, current time is used:
+
+```python3 main.py round add CAMPAIGN_NAME ROUND_NUMBER --round_start SECONDS SINCE EPOCH```
+
+<picture>
+ <img alt="Round start with flag JSON preview" src="blobs/round_start_flag_used.png">
 </picture>
 
 End round:
