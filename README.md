@@ -78,6 +78,7 @@ This will fetch current post count etc. for each user currently added into the c
 End round:
 
 ```python3 main.py round end CAMPAIGN_NAME ROUND_NUMBER```
+
 This will fetch post scount etc. for each user that was in the campaign at the start of the round and update the information and count difference to start.
 
 <picture>
@@ -85,6 +86,7 @@ This will fetch post scount etc. for each user that was in the campaign at the s
 </picture>
 
 Save round information to CSV (can be done at start of round as well as end of round):
+
 ```python3 main.py round round_to_csv CAMPAIGN_NAME ROUND_NUMBER```
 
 <picture>
