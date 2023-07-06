@@ -11,12 +11,15 @@ from utils import validate_data_folder, fetch_bitcointalk_profile, fetch_user_po
 
 logger = logging.getLogger(__name__)
 
+
 class MetadataError(Exception):
     """Represents errors regarding metadata of campaigns or rounds"""
+
 
 class NoSuchRoundError(Exception):
     """Represent error that occurs when a round doesn't exist
     and program may misbehave if exception not raised"""
+
 
 def read_metadata(data_folder, campaign_name):
     """Reads campaign metadata from the metadata.json
@@ -27,7 +30,7 @@ def read_metadata(data_folder, campaign_name):
             metadata = json.load(f)
             if (isinstance(metadata, dict) and
                 'campaign_name' in metadata and
-                metadata.get('campaign_name') == campaign_name):
+                    metadata.get('campaign_name') == campaign_name):
                 return metadata
             raise MetadataError("Campaign metadata file contains incorrect data")
         except json.JSONDecodeError as error:
@@ -52,7 +55,7 @@ def read_round_data(campaign_path, round_number):
             round_dict = json.load(f)
             if (isinstance(round_dict, dict) and
                 'round_number' in round_dict and
-                round_dict.get('round_number') == round_number):
+                    round_dict.get('round_number') == round_number):
                 return round_dict
             raise MetadataError("Round metadata file contains incorrect data")
         except json.JSONDecodeError as error:
@@ -148,6 +151,7 @@ def round_exists(campaign_path, round_number):
     """Check that round with given path and round number exists"""
     return (campaign_path / str(round_number)).is_dir()
 
+
 def round_has_ended(campaign_path, round_number):
     """Check if a round has ended or not"""
     if round_exists(campaign_path, round_number):
@@ -201,6 +205,7 @@ def initialize_round_participants(data_folder, campaign_name, start_current_time
                 'uid': item.get('uid'),
                 'name': item.get('name'),
                 'rank': item.get('rank'),
+                'start_current_time': start_current_time,
                 'start_post_count': item.get('post_count') if start_current_time else 'unknown',
                 'start_activity': item.get('activity') if start_current_time else 'unknown',
                 'start_merit': item.get('merit') if start_current_time else 'unknown',
@@ -224,17 +229,17 @@ def finalize_round_participants(round_start, participants, start_current_time):
 
         participants[uid]['post_count_difference'] = (
             int(participants[uid]['end_post_count']) -
-                int(participants[uid]['start_post_count'])
+            int(participants[uid]['start_post_count'])
         ) if start_current_time else 'unknown'
 
         participants[uid]['activity_gained'] = (
             int(participants[uid]['end_activity']) -
-                int(participants[uid]['start_activity'])
+            int(participants[uid]['start_activity'])
         ) if start_current_time else 'unknown'
 
         participants[uid]['merit_gained'] = (
             int(participants[uid]['end_merit']) -
-                int(participants[uid]['start_merit'])
+            int(participants[uid]['start_merit'])
         ) if start_current_time else 'unknown'
 
         participants[uid]['posts_made'] = len(posts)
@@ -284,7 +289,7 @@ def add_round(args):
                 'ended': False,
                 'round_start': round_start,
                 'round_start_utc': datetime.utcfromtimestamp(round_start).strftime(
-                "%Y-%m-%dT%H:%M:%SZ"),
+                    "%Y-%m-%dT%H:%M:%SZ"),
                 'participants': initialize_round_participants(
                     path, campaign_name, start_current_time)
             }
@@ -334,7 +339,7 @@ def add_participant(args):
     if campaign_exists(path, campaign_name):
         metadata = read_metadata(path, campaign_name)
         print("Adding participant...")
-        if not 'participants' in metadata:
+        if 'participants' not in metadata:
             metadata['participants'] = dict()
         if str(args.uid) not in metadata['participants']:
             try:
@@ -368,6 +373,7 @@ def remove_participant(args):
                 print("Participant with given UID is not a part of the campaign")
         else:
             print("No participants in the campaign")
+
 
 def round_to_csv(args):
     """Convert round JSON to csv"""
