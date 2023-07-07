@@ -83,6 +83,10 @@ If this flag is used, the starting post count, activity and merit will be unknow
  <img alt="Round start with flag JSON preview" src="blobs/round_start_flag_used.png">
 </picture>
 
+Add a new participant to an ongoing round:
+
+```python3 main.py round add_participant CAMPAIGN_NAME ROUND_NUMBER BITCOINTALK_UID```
+
 End round:
 
 ```python3 main.py round end CAMPAIGN_NAME ROUND_NUMBER```
