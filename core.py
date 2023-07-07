@@ -393,6 +393,7 @@ def add_round_participant(args):
                 print("Participant already found in campaign. Doing nothing.")
             else:
                 campaign_metadata['participants'][str_uid] = username
+                write_metadata(data_folder, campaign_name, json.dumps(campaign_metadata))
                 print(f"{username} added to campaign")
         else:
             print("Given round number doesn't exist... aborting")
