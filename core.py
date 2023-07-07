@@ -532,7 +532,7 @@ def round_to_csv(args):
                             'posts_made', 'rejected_posts', 'accepted_posts', 'payment_address', 'payment', 'txid']
                         )
                         for item in participants:
-                            csv_writer.writerow(
+                            csv_writer.writerow([
                                 item.get(UID_KEY),
                                 item.get(NAME_KEY),
                                 item.get(RANK_KEY),
@@ -551,7 +551,7 @@ def round_to_csv(args):
                                 item.get(PAYMENT_ADDRESS_KEY),
                                 '',
                                 '',
-                            )
+                            ])
             print("Done")
         else:
             print("Round does not exist")
