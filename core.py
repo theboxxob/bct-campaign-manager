@@ -203,7 +203,7 @@ def initialize_round_participants(data_folder, campaign_name, start_time, known_
     if campaign_has_participants(data_folder, campaign_name):
         participants = campaign_participants(data_folder, campaign_name)
         results = {}
-        for participant in participants:
+        for participant in participants.values():
             uid = participant.get(UID_KEY)
             payment_address = participant.get(PAYMENT_ADDRESS_KEY)
             results[uid] = fill_round_participant_info(
