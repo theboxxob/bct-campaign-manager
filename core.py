@@ -203,7 +203,7 @@ def initialize_round_participants(data_folder, campaign_name, start_time, known_
     if campaign_has_participants(data_folder, campaign_name):
         participants = campaign_participants(data_folder, campaign_name)
         results = {}
-        for (uid, participant) in participants:
+        for uid, participant in participants:
             payment_address = participant.get(PAYMENT_ADDRESS_KEY)
             results[uid] = fill_round_participant_info(
                 uid, payment_address, start_time, known_start_info)
@@ -307,17 +307,17 @@ def add_round_payment_address(args):
             return
         campaign_metadata = read_metadata(data_folder, campaign_name)
         round_metadata = read_round_data(campaign_path, round_number)
-        campaign_participants = campaign_metadata[PARTICIPANTS_KEY]
+        camp_participants  = campaign_metadata[PARTICIPANTS_KEY]
         round_participants = round_metadata[PARTICIPANTS_KEY]
-        if str_uid not in campaign_participants:
+        if str_uid not in camp_participants:
             print(f'Participant {str_uid} not found in campaign... aborting')
             return
         if str_uid not in round_participants:
             print(f'Participant {str_uid} not found in given round... aborting')
             return
-        campaign_participants[str_uid][PAYMENT_ADDRESS_KEY] = payment_address
+        camp_participants[str_uid][PAYMENT_ADDRESS_KEY] = payment_address
         round_participants[str_uid][PAYMENT_ADDRESS_KEY] = payment_address
-        campaign_metadata[PARTICIPANTS_KEY] = campaign_participants
+        campaign_metadata[PARTICIPANTS_KEY] = camp_participants
         round_metadata[PARTICIPANTS_KEY] = round_participants
         write_metadata(data_folder, campaign_name, json.dumps(campaign_metadata))
         write_round_data(campaign_path, round_number, json.dumps(round_metadata))
