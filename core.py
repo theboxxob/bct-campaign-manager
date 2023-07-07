@@ -364,10 +364,10 @@ def add_participant(args):
 
 def add_round_participant(args):
     """Add a participant to a round"""
-    path = data_folder_path(args.data_folder)
+    data_folder = data_folder_path(args.data_folder)
     campaign_name = args.campaign_name
-    campaign_path = campaign_folder_path(path, campaign_name)
-    if campaign_exists(campaign_path, campaign_name):
+    campaign_path = campaign_folder_path(data_folder, campaign_name)
+    if campaign_exists(data_folder, campaign_name):
         campaign_metadata = read_metadata(campaign_path, campaign_name)
         round_number = args.round_number
         str_uid = args.uid
