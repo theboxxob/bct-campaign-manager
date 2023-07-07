@@ -51,11 +51,18 @@ Add new campaigns by:
 
 Add participants to a campaign by:
 
-```python3 main.py campaign add_participant CAMPAIGN_NAME BITCOINTALK_UID```
+```python3 main.py campaign add_participant [--payment_address ADDRESS] CAMPAIGN_NAME BITCOINTALK_UID```
+
+Here, --payment_address, is an optional parameter to add a crypto address where participant will be paid.
+The address will be visible in the CSV also for less manual filling.
 
 <picture>
  <img alt="campaign JSON preview" src="blobs/campaign_metadata.png">
 </picture>
+
+Add a payment address to an existing campaign participant:
+
+```python3 main.py campaign add_payment_address CAMPAIGN_NAME BITCOINTALK_UID PAYMENT_ADDRESS```
 
 Remove participants:
 
@@ -86,7 +93,14 @@ If this flag is used, the starting post count, activity and merit will be unknow
 
 Add a new participant to an ongoing round:
 
-```python3 main.py round add_participant CAMPAIGN_NAME ROUND_NUMBER BITCOINTALK_UID```
+```python3 main.py round add_participant [--payment_address ADDRESS] CAMPAIGN_NAME ROUND_NUMBER BITCOINTALK_UID```
+
+Here, --payment_address, is an optional parameter to add a crypto address where participant will be paid.
+The address will be visible in the CSV also for less manual filling.
+
+Add a payment address to an existing campaign participant:
+
+```python3 main.py round add_payment_address CAMPAIGN_NAME ROUND_NUMBER BITCOINTALK_UID PAYMENT_ADDRESS```
 
 End round:
 
