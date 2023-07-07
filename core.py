@@ -203,7 +203,8 @@ def initialize_round_participants(data_folder, campaign_name, start_time, known_
     if campaign_has_participants(data_folder, campaign_name):
         participants = campaign_participants(data_folder, campaign_name)
         results = {}
-        for uid, participant in participants:
+        for uid in participants:
+            participant = participants[uid]
             payment_address = participant.get(PAYMENT_ADDRESS_KEY)
             results[uid] = fill_round_participant_info(
                 uid, payment_address, start_time, known_start_info)
@@ -307,7 +308,7 @@ def add_round_payment_address(args):
             return
         campaign_metadata = read_metadata(data_folder, campaign_name)
         round_metadata = read_round_data(campaign_path, round_number)
-        camp_participants  = campaign_metadata[PARTICIPANTS_KEY]
+        camp_participants = campaign_metadata[PARTICIPANTS_KEY]
         round_participants = round_metadata[PARTICIPANTS_KEY]
         if str_uid not in camp_participants:
             print(f'Participant {str_uid} not found in campaign... aborting')
@@ -454,7 +455,10 @@ def add_round_participant(args):
                 participant = dict()
                 participant['name'] = username
                 participant[PAYMENT_ADDRESS_KEY] = payment_address if payment_address else None
-                campaign_metadata[PARTICIPANTS_KEY][str_uid] = username
+                campaign_metadata[PARTICIPANTS_KEY][str_uid] = {
+                    'username': username,
+                    PAYMENT_ADDRESS_KEY: payment_address if payment_address else None
+                }
                 write_metadata(data_folder, campaign_name, json.dumps(campaign_metadata))
                 print(f"{username} added to campaign")
         else:
