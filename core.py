@@ -368,7 +368,7 @@ def add_round_participant(args):
     campaign_name = args.campaign_name
     campaign_path = campaign_folder_path(data_folder, campaign_name)
     if campaign_exists(data_folder, campaign_name):
-        campaign_metadata = read_metadata(campaign_path, campaign_name)
+        campaign_metadata = read_metadata(data_folder, campaign_name)
         round_number = args.round_number
         str_uid = args.uid
         if round_exists(campaign_path, round_number):
