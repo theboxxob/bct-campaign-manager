@@ -381,12 +381,10 @@ def add_round_participant(args):
                 print("Participant already found in given round")
                 return
             else:
-                profile = fetch_bitcointalk_profile(args.uid)
-                username = profile.get('name')
                 current_time = int(time.time())
-                round_metadata['participants'][str_uid] = (
-                    fill_round_participant_info(args.uid, current_time, True)
-                )
+                round_participant = fill_round_participant_info(args.uid, current_time, True)
+                username = round_participant.get('name')
+                round_metadata['participants'][str_uid] = round_participant
                 write_round_data(campaign_path, round_number, json.dumps(round_metadata))
                 print(f"{username} added to round")
             if str_uid in campaign_metadata['participants']:
