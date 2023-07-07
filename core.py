@@ -193,33 +193,33 @@ def set_current_round(data_folder, campaign_name, current_round):
     write_metadata(data_folder, campaign_name, json.dumps(metadata))
 
 
-def initialize_round_participants(data_folder, campaign_name, start_time, start_current_time):
+def initialize_round_participants(data_folder, campaign_name, start_time, known_start_info):
     """Get participants from campaign metadata and add them to the round
     as participants"""
     if campaign_has_participants(data_folder, campaign_name):
         ids = campaign_participant_ids(data_folder, campaign_name)
         results = {}
         for uid in ids:
-            results[uid] = fill_round_participant_info(uid, start_time, start_current_time)
+            results[uid] = fill_round_participant_info(uid, start_time, known_start_info)
         return results
     return {}
 
 
-def fill_round_participant_info(profile_id, start_time, start_current_time):
+def fill_round_participant_info(profile_id, start_time, known_start_info):
     profile = fetch_bitcointalk_profile(profile_id)
     return {
         'uid': profile.get('uid'),
         'name': profile.get('name'),
         'rank': profile.get('rank'),
         'start_time': start_time,
-        'start_current_time': start_current_time,
-        'start_post_count': profile.get('post_count') if start_current_time else 'unknown',
-        'start_activity': profile.get('activity') if start_current_time else 'unknown',
-        'start_merit': profile.get('merit') if start_current_time else 'unknown',
+        'known_start_info': known_start_info,
+        'start_post_count': profile.get('post_count') if known_start_info else 'unknown',
+        'start_activity': profile.get('activity') if known_start_info else 'unknown',
+        'start_merit': profile.get('merit') if known_start_info else 'unknown',
     }
 
 
-def finalize_round_participants(participants, start_current_time):
+def finalize_round_participants(participants, known_start_info):
     """Go through each participant in the round and update info and
     calculate difference from start"""
     profiles = map(fetch_bitcointalk_profile, participants.keys())
@@ -235,17 +235,17 @@ def finalize_round_participants(participants, start_current_time):
         participants[uid]['post_count_difference'] = (
             int(participants[uid]['end_post_count']) -
             int(participants[uid]['start_post_count'])
-        ) if start_current_time else 'unknown'
+        ) if known_start_info else 'unknown'
 
         participants[uid]['activity_gained'] = (
             int(participants[uid]['end_activity']) -
             int(participants[uid]['start_activity'])
-        ) if start_current_time else 'unknown'
+        ) if known_start_info else 'unknown'
 
         participants[uid]['merit_gained'] = (
             int(participants[uid]['end_merit']) -
             int(participants[uid]['start_merit'])
-        ) if start_current_time else 'unknown'
+        ) if known_start_info else 'unknown'
 
         participants[uid]['posts_made'] = len(posts)
         print("Done")
@@ -279,13 +279,13 @@ def add_round(args):
         return
     campaign = campaign_folder_path(path, campaign_name)
     round_number = args.round_number
-    start_current_time = False
+    known_start_info = False
     if not round_exists(campaign, round_number):
         print(f"Adding round number {round_number}")
         round_folder = campaign / str(round_number)
         os.makedirs(round_folder)
         if not (round_start := args.round_start):
-            start_current_time = True
+            known_start_info = True
             round_start = int(time.time())
         if campaign_has_participants(path, campaign_name):
             new_round = {
@@ -296,7 +296,7 @@ def add_round(args):
                 'round_start_utc': datetime.utcfromtimestamp(round_start).strftime(
                     "%Y-%m-%dT%H:%M:%SZ"),
                 'participants': initialize_round_participants(
-                    path, campaign_name, round_start, start_current_time)
+                    path, campaign_name, round_start, known_start_info)
             }
             write_round_data(campaign, round_number, json.dumps(new_round))
             print("Round added and written to the campaign folder")
@@ -318,8 +318,7 @@ def end_round(args):
     if round_exists(campaign_path, round_number):
         now = time.time()
         round_dict = read_round_data(campaign_path, round_number)
-        round_start = round_dict.get('round_start')
-        start_current_time = round_dict.get('start_current_time')
+        known_start_info = round_dict.get('known_start_info')
         if round_has_ended(campaign_path, round_number):
             print("Round has already ended")
             return
@@ -329,7 +328,7 @@ def end_round(args):
         round_dict['round_end_utc'] = datetime.utcfromtimestamp(now).strftime("%Y-%m-%dT%H:%M:%SZ")
         if round_has_participants(campaign_path, round_number):
             round_dict['participants'] = finalize_round_participants(
-                round_dict.get('participants'), start_current_time)
+                round_dict.get('participants'), known_start_info)
         else:
             print("No participants to count posts for")
         write_round_data(campaign_path, round_number, json.dumps(round_dict))
@@ -370,7 +369,7 @@ def add_round_participant(args):
     if campaign_exists(data_folder, campaign_name):
         campaign_metadata = read_metadata(data_folder, campaign_name)
         round_number = args.round_number
-        str_uid = args.uid
+        str_uid = str(args.uid)
         if round_exists(campaign_path, round_number):
             print("Adding participant to round (and campaign if not already present)")
             round_metadata = read_round_data(campaign_path, round_number)
