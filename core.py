@@ -219,13 +219,14 @@ def fill_round_participant_info(profile_id, start_time, known_start_info):
     }
 
 
-def finalize_round_participants(participants, known_start_info):
+def finalize_round_participants(participants):
     """Go through each participant in the round and update info and
     calculate difference from start"""
     profiles = map(fetch_bitcointalk_profile, participants.keys())
     for profile in profiles:
         uid = str(profile.get('uid'))
         round_participant = participants.get(uid)
+        known_start_info = round_participant.get('known_start_info')
         posts = fetch_user_posts(uid, round_participant.get('start_time'))
         print(f"Calculating posts for {profile.get('name')}...")
         participants[uid]['end_post_count'] = profile.get('post_count')
@@ -318,7 +319,6 @@ def end_round(args):
     if round_exists(campaign_path, round_number):
         now = time.time()
         round_dict = read_round_data(campaign_path, round_number)
-        known_start_info = round_dict.get('known_start_info')
         if round_has_ended(campaign_path, round_number):
             print("Round has already ended")
             return
@@ -328,7 +328,7 @@ def end_round(args):
         round_dict['round_end_utc'] = datetime.utcfromtimestamp(now).strftime("%Y-%m-%dT%H:%M:%SZ")
         if round_has_participants(campaign_path, round_number):
             round_dict['participants'] = finalize_round_participants(
-                round_dict.get('participants'), known_start_info)
+                round_dict.get('participants'))
         else:
             print("No participants to count posts for")
         write_round_data(campaign_path, round_number, json.dumps(round_dict))
