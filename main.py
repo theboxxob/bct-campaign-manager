@@ -2,7 +2,7 @@
 import logging
 from pathlib import Path
 
-from core import add_campaign, add_participant, remove_participant, add_round, end_round, round_to_csv
+from core import add_campaign, add_participant, remove_participant, add_round, end_round, round_to_csv, add_round_participant
 
 logger = logging.getLogger(__name__)
 
@@ -11,10 +11,10 @@ if __name__ == '__main__':
     import argparse
     arg_parser = argparse.ArgumentParser()
     arg_parser.add_argument('--data_folder', type=Path, help=
-        'Folder where campaign related date is saved. '
-        'By default the current path.')
+                            'Folder where campaign related date is saved. '
+                            'By default the current path.')
     subparsers = arg_parser.add_subparsers(dest='command', required=True,
-                                        help="choose resource to work on")
+                                           help="choose resource to work on")
 
     campaign_parser = subparsers.add_parser('campaign', help='campaign related actions')
     campaign_common_args = argparse.ArgumentParser(add_help=False)
@@ -44,8 +44,15 @@ if __name__ == '__main__':
     add_round_subparser = round_subparser.add_parser('add', parents=[round_common_args])
     add_round_subparser.set_defaults(func=add_round)
     add_round_subparser.add_argument('--round_start', type=int, help=
-        'timestamp of when round started (seconds since epoch). '
-        'Current time used if not provided.')
+                                     'timestamp of when round started (seconds since epoch). '
+                                     'Current time used if not provided.')
+
+    add_round_participant_subparser = round_subparser.add_parser(
+        'add_participant', parents=[round_common_args]
+    )
+    add_round_participant_subparser.add_argument(
+        'uid', type=int, help='bitcointalk uid of participant')
+    add_round_participant_subparser.set_defaults(func=add_round_participant)
 
     end_round_subparser = round_subparser.add_parser('end', parents=[round_common_args])
     end_round_subparser.set_defaults(func=end_round)
