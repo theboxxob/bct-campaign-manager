@@ -193,35 +193,40 @@ def set_current_round(data_folder, campaign_name, current_round):
     write_metadata(data_folder, campaign_name, json.dumps(metadata))
 
 
-def initialize_round_participants(data_folder, campaign_name, start_current_time):
+def initialize_round_participants(data_folder, campaign_name, start_time, start_current_time):
     """Get participants from campaign metadata and add them to the round
     as participants"""
     if campaign_has_participants(data_folder, campaign_name):
         ids = campaign_participant_ids(data_folder, campaign_name)
-        profiles = map(fetch_bitcointalk_profile, ids)
         results = {}
-        for item in profiles:
-            new_element = {
-                'uid': item.get('uid'),
-                'name': item.get('name'),
-                'rank': item.get('rank'),
-                'start_current_time': start_current_time,
-                'start_post_count': item.get('post_count') if start_current_time else 'unknown',
-                'start_activity': item.get('activity') if start_current_time else 'unknown',
-                'start_merit': item.get('merit') if start_current_time else 'unknown',
-            }
-            results[item.get('uid')] = new_element
+        for uid in ids:
+            results[uid] = fill_round_participant_info(uid, start_time, start_current_time)
         return results
     return {}
 
 
-def finalize_round_participants(round_start, participants, start_current_time):
+def fill_round_participant_info(profile_id, start_time, start_current_time):
+    profile = fetch_bitcointalk_profile(profile_id)
+    return {
+        'uid': profile.get('uid'),
+        'name': profile.get('name'),
+        'rank': profile.get('rank'),
+        'start_time': start_time,
+        'start_current_time': start_current_time,
+        'start_post_count': profile.get('post_count') if start_current_time else 'unknown',
+        'start_activity': profile.get('activity') if start_current_time else 'unknown',
+        'start_merit': profile.get('merit') if start_current_time else 'unknown',
+    }
+
+
+def finalize_round_participants(participants, start_current_time):
     """Go through each participant in the round and update info and
     calculate difference from start"""
     profiles = map(fetch_bitcointalk_profile, participants.keys())
     for profile in profiles:
         uid = str(profile.get('uid'))
-        posts = fetch_user_posts(uid, round_start)
+        round_participant = participants.get('uid')
+        posts = fetch_user_posts(uid, round_participant.get('start_time'))
         print(f"Calculating posts for {profile.get('name')}...")
         participants[uid]['end_post_count'] = profile.get('post_count')
         participants[uid]['end_activity'] = profile.get('activity')
@@ -324,7 +329,7 @@ def end_round(args):
         round_dict['round_end_utc'] = datetime.utcfromtimestamp(now).strftime("%Y-%m-%dT%H:%M:%SZ")
         if round_has_participants(campaign_path, round_number):
             round_dict['participants'] = finalize_round_participants(
-                round_start, round_dict.get('participants'), start_current_time)
+                round_dict.get('participants'), start_current_time)
         else:
             print("No participants to count posts for")
         write_round_data(campaign_path, round_number, json.dumps(round_dict))
@@ -355,6 +360,44 @@ def add_participant(args):
             print("Participant with given UID already exists")
     else:
         logger.error("Campaign with given name doesn't exist.")
+
+
+def add_round_participant(args):
+    """Add a participant to a round"""
+    campaign_path = data_folder_path(args.data_folder)
+    campaign_name = args.campaign_name
+    if campaign_exists(campaign_path, campaign_name):
+        campaign_metadata = read_metadata(campaign_path, campaign_name)
+        round_number = args.round_number
+        str_uid = args.uid
+        if round_exists(campaign_path, round_number):
+            print("Adding participant to round (and campaign if not already present)")
+            round_metadata = read_round_data(campaign_path, round_number)
+            if 'participants' not in campaign_metadata:
+                campaign_metadata['participants'] = dict()
+            if 'participants' not in round_metadata:
+                round_metadata['participants'] = dict()
+            if str_uid in round_metadata['participants']:
+                print("Participant already found in given round")
+                return
+            else:
+                profile = fetch_bitcointalk_profile(args.uid)
+                username = profile.get('name')
+                current_time = int(time.time())
+                round_metadata['participants'][str_uid] = (
+                    fill_round_participant_info(args.uid, current_time, True)
+                )
+                write_round_data(campaign_path, round_number, json.dumps(round_metadata))
+                print(f"{username} added to round")
+            if str_uid in campaign_metadata['participants']:
+                print("Participant already found in campaign. Doing nothing.")
+            else:
+                campaign_metadata['participants'][str_uid] = username
+                print(f"{username} added to campaign")
+        else:
+            print("Given round number doesn't exist... aborting")
+    else:
+        print("Campaign with given name doesn't exist... aborting")
 
 
 def remove_participant(args):
