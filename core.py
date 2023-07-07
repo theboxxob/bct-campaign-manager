@@ -296,7 +296,7 @@ def add_round(args):
                 'round_start_utc': datetime.utcfromtimestamp(round_start).strftime(
                     "%Y-%m-%dT%H:%M:%SZ"),
                 'participants': initialize_round_participants(
-                    path, campaign_name, start_current_time)
+                    path, campaign_name, round_start, start_current_time)
             }
             write_round_data(campaign, round_number, json.dumps(new_round))
             print("Round added and written to the campaign folder")
