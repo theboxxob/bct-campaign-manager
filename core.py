@@ -225,7 +225,7 @@ def finalize_round_participants(participants, known_start_info):
     profiles = map(fetch_bitcointalk_profile, participants.keys())
     for profile in profiles:
         uid = str(profile.get('uid'))
-        round_participant = participants.get('uid')
+        round_participant = participants.get(uid)
         posts = fetch_user_posts(uid, round_participant.get('start_time'))
         print(f"Calculating posts for {profile.get('name')}...")
         participants[uid]['end_post_count'] = profile.get('post_count')
