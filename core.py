@@ -15,6 +15,20 @@ PARTICIPANTS_KEY = 'participants'
 CAMPAIGN_NAME_KEY = 'campaign_name'
 UID_KEY = 'uid'
 PAYMENT_ADDRESS_KEY = 'payment_address'
+NAME_KEY = 'name'
+RANK_KEY = 'rank'
+START_TIME_KEY = 'start_time'
+KNOWN_START_INFO_KEY = 'known_start_info'
+START_POST_COUNT_KEY = 'start_post_count'
+START_ACTIVITY_KEY = 'start_activity'
+START_MERIT_KEY = 'start_merit'
+END_POST_COUNT_KEY = 'end_post_count'
+END_ACTIVITY_KEY = 'end_activity'
+END_MERIT_KEY = 'end_merit'
+POST_COUNT_DIFFERENCE_KEY = 'post_count_difference'
+ACTIVITY_GAINED_KEY = 'activity_gained'
+MERIT_GAINED_KEY = 'merit_gained'
+POSTS_MADE_KEY = 'posts_made'
 
 class MetadataError(Exception):
     """Represents errors regarding metadata of campaigns or rounds"""
@@ -500,13 +514,10 @@ def round_to_csv(args):
             with (round_folder / 'round.csv').open('w', newline='') as f:
                 csv_writer = csv.writer(f, delimiter=';')
                 csv_writer.writerow(
-                    ['round_number', 'ended', 'round_start',
-                        'round_end', 'round_start_utc', 'round_end_utc'])
+                    ['round_number', 'ended', 'round_start_utc', 'round_end_utc'])
                 csv_writer.writerow([
                     round_data.get('round_number'),
                     round_data.get('ended'),
-                    round_data.get('round_start'),
-                    round_data.get('round_end'),
                     round_data.get('round_start_utc'),
                     round_data.get('round_end_utc')
                 ])
@@ -514,9 +525,33 @@ def round_to_csv(args):
                     participants = round_data[PARTICIPANTS_KEY].values()
                     if len(participants) > 0:
                         csv_writer.writerow(['Participants'])
-                        csv_writer.writerow(next(iter(participants)).keys())
+                        csv_writer.writerow(
+                            ['uid', 'name', 'rank', 'start_post_count', 'end_post_count',
+                             'start_activity', 'end_activity', 'start_merit', 'end_merit',
+                             'post_count_difference', 'activity_gained', 'merit_gained',
+                            'posts_made', 'rejected_posts', 'accepted_posts', 'payment_address', 'payment', 'txid']
+                        )
                         for item in participants:
-                            csv_writer.writerow(item.values())
+                            csv_writer.writerow(
+                                item.get(UID_KEY),
+                                item.get(NAME_KEY),
+                                item.get(RANK_KEY),
+                                item.get(START_POST_COUNT_KEY),
+                                item.get(END_POST_COUNT_KEY),
+                                item.get(START_ACTIVITY_KEY),
+                                item.get(END_ACTIVITY_KEY),
+                                item.get(START_MERIT_KEY),
+                                item.get(END_MERIT_KEY),
+                                item.get(POST_COUNT_DIFFERENCE_KEY),
+                                item.get(ACTIVITY_GAINED_KEY),
+                                item.get(MERIT_GAINED_KEY),
+                                item.get(POSTS_MADE_KEY),
+                                '',
+                                '',
+                                item.get(PAYMENT_ADDRESS_KEY),
+                                '',
+                                '',
+                            )
             print("Done")
         else:
             print("Round does not exist")
