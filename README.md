@@ -98,7 +98,7 @@ Add a new participant to an ongoing round:
 Here, --payment_address, is an optional parameter to add a crypto address where participant will be paid.
 The address will be visible in the CSV also for less manual filling.
 
-Add a payment address to an existing campaign participant:
+Add a payment address to an existing round participant:
 
 ```python3 main.py round add_payment_address CAMPAIGN_NAME ROUND_NUMBER BITCOINTALK_UID PAYMENT_ADDRESS```
 
