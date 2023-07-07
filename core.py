@@ -11,6 +11,10 @@ from utils import validate_data_folder, fetch_bitcointalk_profile, fetch_user_po
 
 logger = logging.getLogger(__name__)
 
+PARTICIPANTS_KEY = 'participants'
+CAMPAIGN_NAME_KEY = 'campaign_name'
+UID_KEY = 'uid'
+PAYMENT_ADDRESS_KEY = 'payment_address'
 
 class MetadataError(Exception):
     """Represents errors regarding metadata of campaigns or rounds"""
@@ -29,8 +33,8 @@ def read_metadata(data_folder, campaign_name):
         try:
             metadata = json.load(f)
             if (isinstance(metadata, dict) and
-                'campaign_name' in metadata and
-                    metadata.get('campaign_name') == campaign_name):
+                CAMPAIGN_NAME_KEY in metadata and
+                    metadata.get(CAMPAIGN_NAME_KEY) == campaign_name):
                 return metadata
             raise MetadataError("Campaign metadata file contains incorrect data")
         except json.JSONDecodeError as error:
@@ -127,22 +131,22 @@ def campaign_exists(path, campaign_name):
 def campaign_has_participants(path, campaign_name):
     """Check if campaign metadata file has the participants key"""
     campaign_metadata = read_metadata(path, campaign_name)
-    if 'participants' in campaign_metadata:
-        if isinstance(campaign_metadata.get('participants'), dict):
+    if PARTICIPANTS_KEY in campaign_metadata:
+        if isinstance(campaign_metadata.get(PARTICIPANTS_KEY), dict):
             return True
         raise MetadataError('Campaign metadata participants item not a dict')
     return False
 
 
-def campaign_participant_ids(path, campaign_name):
+def campaign_participants(path, campaign_name):
     """Returns campaign participant ids from metadata"""
     try:
         metadata_file = campaign_metadata_path(path, campaign_name)
         with metadata_file.open() as f:
             metadata = json.load(f)
             if campaign_has_participants(path, campaign_name):
-                return metadata.get('participants').keys()
-            return []
+                return metadata.get(PARTICIPANTS_KEY)
+            return {}
     except FileNotFoundError as error:
         logger.error(error)
 
@@ -166,8 +170,8 @@ def round_has_participants(campaign_path, round_number):
     """Check if round has any participants
     e.g. if campaign had any participants when round was created"""
     round_metadata = read_round_data(campaign_path, round_number)
-    if 'participants' in round_metadata:
-        if isinstance(round_metadata.get('participants'), dict):
+    if PARTICIPANTS_KEY in round_metadata:
+        if isinstance(round_metadata.get(PARTICIPANTS_KEY), dict):
             return True
         raise MetadataError('Round metadata participants item is not a dict')
     return False
@@ -180,7 +184,7 @@ def round_participant_ids(campaign_path, round_number):
         with metadata_file.open() as f:
             metadata = json.load(f)
             if round_has_participants(campaign_path, round_number):
-                return metadata.get('participants').keys()
+                return metadata.get(PARTICIPANTS_KEY).keys()
             return []
     except FileNotFoundError as error:
         logger.error(error)
@@ -197,20 +201,24 @@ def initialize_round_participants(data_folder, campaign_name, start_time, known_
     """Get participants from campaign metadata and add them to the round
     as participants"""
     if campaign_has_participants(data_folder, campaign_name):
-        ids = campaign_participant_ids(data_folder, campaign_name)
+        participants = campaign_participants(data_folder, campaign_name)
         results = {}
-        for uid in ids:
-            results[uid] = fill_round_participant_info(uid, start_time, known_start_info)
+        for participant in participants:
+            uid = participant.get(UID_KEY)
+            payment_address = participant.get(PAYMENT_ADDRESS_KEY)
+            results[uid] = fill_round_participant_info(
+                uid, payment_address, start_time, known_start_info)
         return results
     return {}
 
 
-def fill_round_participant_info(profile_id, start_time, known_start_info):
+def fill_round_participant_info(profile_id, payment_address, start_time, known_start_info):
     profile = fetch_bitcointalk_profile(profile_id)
     return {
-        'uid': profile.get('uid'),
+        UID_KEY: profile.get(UID_KEY),
         'name': profile.get('name'),
         'rank': profile.get('rank'),
+        PAYMENT_ADDRESS_KEY: payment_address,
         'start_time': start_time,
         'known_start_info': known_start_info,
         'start_post_count': profile.get('post_count') if known_start_info else 'unknown',
@@ -224,7 +232,7 @@ def finalize_round_participants(participants):
     calculate difference from start"""
     profiles = map(fetch_bitcointalk_profile, participants.keys())
     for profile in profiles:
-        uid = str(profile.get('uid'))
+        uid = str(profile.get(UID_KEY))
         round_participant = participants.get(uid)
         known_start_info = round_participant.get('known_start_info')
         posts = fetch_user_posts(uid, round_participant.get('start_time'))
@@ -262,13 +270,60 @@ def add_campaign(args):
         print(f"Adding a campaign with name {campaign_name}")
         os.makedirs(campaign_folder)
         metadata = {
-            'campaign_name': campaign_name,
-            'participants': dict()
+            CAMPAIGN_NAME_KEY: campaign_name,
+            PARTICIPANTS_KEY: dict()
         }
         write_metadata(path, campaign_name, json.dumps(metadata))
         print("Campaign added and metadata written to the campaign folder")
     else:
         print("Campaign folder already exists")
+
+
+def add_payment_address(args):
+    data_folder = data_folder_path(args.data_folder)
+    campaign_name = args.campaign_name
+    str_uid = str(args.uid)
+    payment_address = args.payment_address
+    if campaign_exists(data_folder, campaign_name):
+        campaign_metadata = read_metadata(data_folder, campaign_name)
+        if str_uid in campaign_metadata[PARTICIPANTS_KEY]:
+            campaign_metadata[PARTICIPANTS_KEY][str_uid][PAYMENT_ADDRESS_KEY] = payment_address
+            write_metadata(data_folder, campaign_name, json.dumps(campaign_metadata))
+        else:
+            print('User not in campaign')
+    else:
+        print('Given campaign not found')
+
+
+def add_round_payment_address(args):
+    data_folder = data_folder_path(args.data_folder)
+    campaign_name = args.campaign_name
+    round_number = args.round_number
+    str_uid = str(args.uid)
+    payment_address = args.payment_address
+    campaign_path = campaign_folder_path(data_folder, campaign_name)
+    if campaign_exists(data_folder, campaign_name):
+        if not round_exists(campaign_path, round_number):
+            print('Given round not found... aborting')
+            return
+        campaign_metadata = read_metadata(data_folder, campaign_name)
+        round_metadata = read_round_data(campaign_path, round_number)
+        campaign_participants = campaign_metadata[PARTICIPANTS_KEY]
+        round_participants = round_metadata[PARTICIPANTS_KEY]
+        if str_uid not in campaign_participants:
+            print(f'Participant {str_uid} not found in campaign... aborting')
+            return
+        if str_uid not in round_participants:
+            print(f'Participant {str_uid} not found in given round... aborting')
+            return
+        campaign_participants[str_uid][PAYMENT_ADDRESS_KEY] = payment_address
+        round_participants[str_uid][PAYMENT_ADDRESS_KEY] = payment_address
+        campaign_metadata[PARTICIPANTS_KEY] = campaign_participants
+        round_metadata[PARTICIPANTS_KEY] = round_participants
+        write_metadata(data_folder, campaign_name, json.dumps(campaign_metadata))
+        write_round_data(campaign_path, round_number, json.dumps(round_metadata))
+    else:
+        print('Given campaign not found... aborting')
 
 
 def add_round(args):
@@ -290,13 +345,13 @@ def add_round(args):
             round_start = int(time.time())
         if campaign_has_participants(path, campaign_name):
             new_round = {
-                'campaign_name': campaign_name,
+                CAMPAIGN_NAME_KEY: campaign_name,
                 'round_number': round_number,
                 'ended': False,
                 'round_start': round_start,
                 'round_start_utc': datetime.utcfromtimestamp(round_start).strftime(
                     "%Y-%m-%dT%H:%M:%SZ"),
-                'participants': initialize_round_participants(
+                PARTICIPANTS_KEY: initialize_round_participants(
                     path, campaign_name, round_start, known_start_info)
             }
             write_round_data(campaign, round_number, json.dumps(new_round))
@@ -327,8 +382,8 @@ def end_round(args):
         round_dict['round_end'] = int(now)
         round_dict['round_end_utc'] = datetime.utcfromtimestamp(now).strftime("%Y-%m-%dT%H:%M:%SZ")
         if round_has_participants(campaign_path, round_number):
-            round_dict['participants'] = finalize_round_participants(
-                round_dict.get('participants'))
+            round_dict[PARTICIPANTS_KEY] = finalize_round_participants(
+                round_dict.get(PARTICIPANTS_KEY))
         else:
             print("No participants to count posts for")
         write_round_data(campaign_path, round_number, json.dumps(round_dict))
@@ -340,16 +395,21 @@ def add_participant(args):
     """Add a participant to campaign"""
     path = data_folder_path(args.data_folder)
     campaign_name = args.campaign_name
+    uid = args.uid
+    payment_address = args.payment_address
     if campaign_exists(path, campaign_name):
         metadata = read_metadata(path, campaign_name)
         print("Adding participant...")
-        if 'participants' not in metadata:
-            metadata['participants'] = dict()
-        if str(args.uid) not in metadata['participants']:
+        if PARTICIPANTS_KEY not in metadata:
+            metadata[PARTICIPANTS_KEY] = dict()
+        if str(uid) not in metadata[PARTICIPANTS_KEY]:
             try:
-                profile = fetch_bitcointalk_profile(args.uid)
-                print(f"Adding participant {args.uid}...")
-                metadata["participants"][str(args.uid)] = profile.get('name')
+                profile = fetch_bitcointalk_profile(uid)
+                print(f"Adding participant {uid}...")
+                participant = dict()
+                participant['name'] = profile.get('name')
+                participant[PAYMENT_ADDRESS_KEY] = payment_address if payment_address else None
+                metadata["participants"][str(uid)] = participant
             except (FileNotFoundError, CrawlerResultError) as error:
                 logger.error(error)
                 raise
@@ -365,32 +425,37 @@ def add_round_participant(args):
     """Add a participant to a round"""
     data_folder = data_folder_path(args.data_folder)
     campaign_name = args.campaign_name
+    payment_address = args.payment_address
+    uid = args.uid
     campaign_path = campaign_folder_path(data_folder, campaign_name)
     if campaign_exists(data_folder, campaign_name):
         campaign_metadata = read_metadata(data_folder, campaign_name)
         round_number = args.round_number
-        str_uid = str(args.uid)
+        str_uid = str(uid)
         if round_exists(campaign_path, round_number):
             print("Adding participant to round (and campaign if not already present)")
             round_metadata = read_round_data(campaign_path, round_number)
-            if 'participants' not in campaign_metadata:
-                campaign_metadata['participants'] = dict()
-            if 'participants' not in round_metadata:
-                round_metadata['participants'] = dict()
-            if str_uid in round_metadata['participants']:
+            if PARTICIPANTS_KEY not in campaign_metadata:
+                campaign_metadata[PARTICIPANTS_KEY] = dict()
+            if PARTICIPANTS_KEY not in round_metadata:
+                round_metadata[PARTICIPANTS_KEY] = dict()
+            if str_uid in round_metadata[PARTICIPANTS_KEY]:
                 print("Participant already found in given round")
                 return
             else:
                 current_time = int(time.time())
-                round_participant = fill_round_participant_info(args.uid, current_time, True)
+                round_participant = fill_round_participant_info(uid, payment_address, current_time, True)
                 username = round_participant.get('name')
-                round_metadata['participants'][str_uid] = round_participant
+                round_metadata[PARTICIPANTS_KEY][str_uid] = round_participant
                 write_round_data(campaign_path, round_number, json.dumps(round_metadata))
                 print(f"{username} added to round")
-            if str_uid in campaign_metadata['participants']:
+            if str_uid in campaign_metadata[PARTICIPANTS_KEY]:
                 print("Participant already found in campaign. Doing nothing.")
             else:
-                campaign_metadata['participants'][str_uid] = username
+                participant = dict()
+                participant['name'] = username
+                participant[PAYMENT_ADDRESS_KEY] = payment_address if payment_address else None
+                campaign_metadata[PARTICIPANTS_KEY][str_uid] = username
                 write_metadata(data_folder, campaign_name, json.dumps(campaign_metadata))
                 print(f"{username} added to campaign")
         else:
@@ -403,12 +468,13 @@ def remove_participant(args):
     """Remove a participant from campaign"""
     data_folder = data_folder_path(args.data_folder)
     campaign_name = args.campaign_name
+    uid = args.uid
     if campaign_exists(data_folder, campaign_name):
         metadata = read_metadata(data_folder, campaign_name)
-        if 'participants' in metadata:
-            if str(args.uid) in metadata['participants']:
-                print(f"Deleting participant with uid {args.uid}")
-                del metadata['participants'][str(args.uid)]
+        if PARTICIPANTS_KEY in metadata:
+            if str(uid) in metadata[PARTICIPANTS_KEY]:
+                print(f"Deleting participant with uid {uid}")
+                del metadata[PARTICIPANTS_KEY][str(uid)]
                 write_metadata(data_folder, campaign_name, json.dumps(metadata))
                 print("Participant deleted")
             else:
@@ -441,8 +507,8 @@ def round_to_csv(args):
                     round_data.get('round_start_utc'),
                     round_data.get('round_end_utc')
                 ])
-                if 'participants' in round_data:
-                    participants = round_data['participants'].values()
+                if PARTICIPANTS_KEY in round_data:
+                    participants = round_data[PARTICIPANTS_KEY].values()
                     if len(participants) > 0:
                         csv_writer.writerow(['Participants'])
                         csv_writer.writerow(next(iter(participants)).keys())

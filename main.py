@@ -2,7 +2,7 @@
 import logging
 from pathlib import Path
 
-from core import add_campaign, add_participant, remove_participant, add_round, end_round, round_to_csv, add_round_participant
+from core import add_campaign, add_participant, remove_participant, add_round, end_round, round_to_csv, add_round_participant, add_payment_address, add_round_payment_address
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +27,21 @@ if __name__ == '__main__':
     add_participant_subparser = campaign_subparser.add_parser(
         'add_participant', parents=[campaign_common_args])
     add_participant_subparser.add_argument('uid', type=int, help="bitcointalk uid of participant")
+    add_participant_subparser.add_argument(
+        '--payment_address', help='cryptocurrency address of participant')
     add_participant_subparser.set_defaults(func=add_participant)
+
+    add_payment_address_subparser = campaign_subparser.add_parser(
+        'add_payment_address', parents=[campaign_common_args]
+    )
+    add_payment_address_subparser.add_argument(
+        'uid', type=int, help='bitcointalk uid of participant')
+    add_payment_address_subparser.add_argument(
+        'payment_address', help='cryptocurrency address of participant'
+    )
+    add_payment_address_subparser.set_defaults(
+        func=add_payment_address
+    )
 
     remove_participant_subparser = campaign_subparser.add_parser(
         'remove_participant', parents=[campaign_common_args])
@@ -52,10 +66,25 @@ if __name__ == '__main__':
     )
     add_round_participant_subparser.add_argument(
         'uid', type=int, help='bitcointalk uid of participant')
+    add_round_participant_subparser.add_argument(
+        '--payment_address', help='cryptocurrency address of participant'
+    )
     add_round_participant_subparser.set_defaults(func=add_round_participant)
 
     end_round_subparser = round_subparser.add_parser('end', parents=[round_common_args])
     end_round_subparser.set_defaults(func=end_round)
+
+    add_round_payment_address_subparser = round_subparser.add_parser(
+        'add_payment_address', parents=[round_common_args]
+    )
+    add_round_payment_address_subparser.add_argument(
+        'uid', type=int, help='bitcointalk uid of participant')
+    add_round_payment_address_subparser.add_argument(
+        'payment_address', help='cryptocurrency address of participant'
+    )
+    add_round_payment_address_subparser.set_defaults(
+        func=add_round_payment_address
+    )
 
     round_csv_subparser = round_subparser.add_parser('round_to_csv', parents=[round_common_args])
     round_csv_subparser.set_defaults(func=round_to_csv)
